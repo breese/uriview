@@ -1,6 +1,16 @@
 #ifndef NETWORK_DETAIL_URI_VIEW_IPP
 #define NETWORK_DETAIL_URI_VIEW_IPP
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Copyright (C) 2015 Bjorn Reese <breese@users.sourceforge.net>
+//
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE_1_0.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+//
+///////////////////////////////////////////////////////////////////////////////
+
 #include <cassert>
 
 namespace network
@@ -10,6 +20,10 @@ inline uri_view::uri_view(const string_view& input)
 {
     parse(input);
 }
+
+//-----------------------------------------------------------------------------
+// Accessors
+//-----------------------------------------------------------------------------
 
 inline const uri_view::string_view& uri_view::scheme() const
 {
@@ -31,6 +45,20 @@ inline const uri_view::string_view& uri_view::port() const
     return port_view;
 }
 
+inline const uri_view::string_view& uri_view::authority() const
+{
+    return authority_view;
+}
+
+inline const uri_view::string_view& uri_view::path() const
+{
+    return path_view;
+}
+
+//-----------------------------------------------------------------------------
+// Parser
+//-----------------------------------------------------------------------------
+
 inline void uri_view::parse(string_view input)
 {
     // RFC 3986 Section 3
@@ -43,10 +71,9 @@ inline void uri_view::parse(string_view input)
     size_type processed = parse_scheme(input);
     input.remove_prefix(processed);
 
-    const value_type colon = ':';
-    if (input.empty() || (input[0] != colon))
+    if (input.empty() || (input[0] != token_colon))
         return; // FIXME: Report error
-    input.remove_prefix(sizeof(colon));
+    input.remove_prefix(sizeof(token_colon));
 
     processed = parse_hier_part(input);
 
@@ -63,7 +90,7 @@ inline uri_view::size_type uri_view::parse_scheme(string_view input)
 
     string_view::const_iterator current = input.begin();
 
-    if (!is_alpha(*current))
+    if (!is_alpha_token(*current))
         return 0;
     ++current;
 
@@ -71,7 +98,7 @@ inline uri_view::size_type uri_view::parse_scheme(string_view input)
          current != input.end();
          ++current)
     {
-        if (!is_scheme(*current))
+        if (!is_scheme_token(*current))
             break;
     }
     const size_type result = std::distance(input.begin(), current);
@@ -88,12 +115,22 @@ inline uri_view::size_type uri_view::parse_hier_part(string_view input)
     //           / path-rootless
     //           / path-empty
 
-    if ((input[0] == '/') && (input[1] == '/'))
+    if ((input[0] == token_slash) && (input[1] == token_slash))
     {
         input.remove_prefix(2);
+        size_type total = 0;
         size_type processed = parse_authority(input);
-        // FIXME: path-abempty
-        return processed;
+        if (processed == 0)
+            return total;
+        authority_view = input.substr(total, processed);
+        total += processed;
+
+        processed = parse_path_abempty(input.substr(processed));
+        if (processed == 0)
+            return total;
+        path_view = input.substr(total, processed);
+        total += processed;
+        return total;
     }
     else
     {
@@ -109,23 +146,25 @@ inline uri_view::size_type uri_view::parse_authority(string_view input)
     // authority = [ userinfo "@" ] host [ ":" port ]
 
     size_type processed = parse_userinfo(input);
-    const value_type ampersand = '@';
-    if (input[processed] == ampersand)
+    size_type total = processed;
+    if (input[processed] == token_at)
     {
         userinfo_view = input.substr(processed);
-        input.remove_prefix(processed + sizeof(ampersand));
+        input.remove_prefix(processed + sizeof(token_at));
     }
 
     processed = parse_host(input);
     if (processed == 0)
         return 0;
+    total += processed;
 
-    const value_type colon = ':';
-    if (input[processed] == colon)
+    if (input[processed] == token_colon)
     {
-        return parse_port(input.substr(processed + sizeof(colon)));
+        processed = parse_port(input.substr(processed + sizeof(token_colon)));
+        if (processed > 0)
+            total += processed + sizeof(token_colon);
     }
-    return processed;
+    return total;
 }
 
 inline uri_view::size_type uri_view::parse_userinfo(string_view input)
@@ -143,12 +182,36 @@ inline uri_view::size_type uri_view::parse_host(string_view input)
     //
     // host = IP-literal / IPv4address / reg-name
 
-    size_type processed = parse_ipv4address(input);
-    if (processed == 0)
-        return 0;
+    size_type processed = 0;
+
+    if (input[0] == token_bracket_open)
+    {
+        processed = parse_ipliteral(input);
+        if (processed == 0)
+            return 0;
+    }
+    else
+    {
+        processed = parse_ipv4address(input);
+        if (processed == 0)
+        {
+            processed = parse_regname(input);
+            if (processed == 0)
+                return 0;
+        }
+    }
 
     host_view = input.substr(0, processed);
     return processed;
+}
+
+inline uri_view::size_type uri_view::parse_ipliteral(string_view input)
+{
+    // RFC 3986 Section 3.2.2
+    //
+    // IP-literal = "[" ( IPv6address / IPvFuture  ) "]"
+
+    return 0; // FIXME
 }
 
 inline uri_view::size_type uri_view::parse_ipv4address(string_view input)
@@ -157,28 +220,26 @@ inline uri_view::size_type uri_view::parse_ipv4address(string_view input)
     //
     // IPv4address = dec-octet "." dec-octet "." dec-octet "." dec-octet
 
-    const value_type dot = '.';
-
     // First octet
     size_type processed = parse_dec_octet(input);
     size_type total = processed;
-    if ((processed == 0) || (input[total] != dot))
+    if ((processed == 0) || (input[total] != token_dot))
         return 0;
-    total += sizeof(dot);
+    total += sizeof(token_dot);
 
     // Second octet
     processed = parse_dec_octet(input.substr(total));
     total += processed;
-    if ((processed == 0) || (input[total] != dot))
+    if ((processed == 0) || (input[total] != token_dot))
         return 0;
-    total += sizeof(dot);
+    total += sizeof(token_dot);
 
     // Third octet
     processed = parse_dec_octet(input.substr(total));
     total += processed;
-    if ((processed == 0) || (input[total] != dot))
+    if ((processed == 0) || (input[total] != token_dot))
         return 0;
-    total += sizeof(dot);
+    total += sizeof(token_dot);
 
     // Fourth octet
     processed = parse_dec_octet(input.substr(total));
@@ -187,6 +248,15 @@ inline uri_view::size_type uri_view::parse_ipv4address(string_view input)
     total += processed;
 
     return total;
+}
+
+inline uri_view::size_type uri_view::parse_regname(string_view input)
+{
+    // RFC 3986 Section 3.2.2
+    //
+    // reg-name = *( unreserved / pct-encoded / sub-delims )
+
+    return 0; // FIXME
 }
 
 inline uri_view::size_type uri_view::parse_dec_octet(string_view input)
@@ -204,9 +274,9 @@ inline uri_view::size_type uri_view::parse_dec_octet(string_view input)
         return 1;
 
     case 0x31:
-        if (!is_digit(input[1]))
+        if (!is_digit_token(input[1]))
             return 1;
-        if (!is_digit(input[2]))
+        if (!is_digit_token(input[2]))
             return 2;
         return 3;
 
@@ -215,7 +285,7 @@ inline uri_view::size_type uri_view::parse_dec_octet(string_view input)
         {
         case 0x30: case 0x31: case 0x32: case 0x33:
         case 0x34:
-            if (is_digit(input[2]))
+            if (is_digit_token(input[2]))
                 return 3;
             return 2;
 
@@ -240,7 +310,7 @@ inline uri_view::size_type uri_view::parse_dec_octet(string_view input)
     case 0x37:
     case 0x38:
     case 0x39:
-        if (is_digit(input[1]))
+        if (is_digit_token(input[1]))
             return 2;
         return 1;
 
@@ -258,7 +328,7 @@ inline uri_view::size_type uri_view::parse_port(string_view input)
     string_view::const_iterator current = input.begin();
     while (current != input.end())
     {
-        if (!is_digit(*current))
+        if (!is_digit_token(*current))
             break;
         ++current;
     }
@@ -269,7 +339,78 @@ inline uri_view::size_type uri_view::parse_port(string_view input)
     return processed;
 }
 
-inline bool uri_view::is_alpha(value_type value) const
+inline uri_view::size_type uri_view::parse_path_abempty(string_view input)
+{
+    // RFC 3986 Section 3.3
+    //
+    // path-abempty  = *( "/" segment )
+
+    size_type total = 0;
+    while (input[0] == token_slash)
+    {
+        size_type processed = sizeof(token_slash);
+        input.remove_prefix(processed);
+        total += processed;
+        processed = parse_segment(input);
+        if (processed == 0)
+            break;
+        total += processed;
+        input.remove_prefix(processed);
+    }
+    return total;
+}
+
+inline uri_view::size_type uri_view::parse_segment(string_view input)
+{
+    // RFC 3986 Section 3.3
+    //
+    // segment = *pchar
+
+    string_view::const_iterator current = input.begin();
+    while (current != input.end())
+    {
+        size_type processed = parse_pchar(&*current);
+        if (processed == 0)
+            break;
+        std::advance(current, processed);
+    }
+    return std::distance(input.begin(), current);
+}
+
+inline uri_view::size_type uri_view::parse_pchar(string_view input)
+{
+    // RFC 3986 Section 3.3
+    //
+    // pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
+
+    switch (input[0])
+    {
+    case token_percent:
+        return parse_pct_encoded(input);
+
+    case token_colon:
+    case token_at:
+        return 1;
+
+    default:
+        if (is_unreserved_token(input[0]) || is_subdelims_token(input[0]))
+            return 1;
+        return 0;
+    }
+}
+
+inline uri_view::size_type uri_view::parse_pct_encoded(string_view input)
+{
+    // pct-encoded = "%" HEXDIG HEXDIG
+
+    return 0; // FIXME
+}
+
+//-----------------------------------------------------------------------------
+// Tokens
+//-----------------------------------------------------------------------------
+
+inline bool uri_view::is_alpha_token(value_type value) const
 {
     // RFC 2234 Section 6.1
     //
@@ -297,7 +438,7 @@ inline bool uri_view::is_alpha(value_type value) const
     }
 }
 
-inline bool uri_view::is_digit(value_type value) const
+inline bool uri_view::is_digit_token(value_type value) const
 {
     // RFC 2234 Section 6.1
     //
@@ -314,7 +455,7 @@ inline bool uri_view::is_digit(value_type value) const
     }
 }
 
-inline bool uri_view::is_scheme(value_type value) const
+inline bool uri_view::is_scheme_token(value_type value) const
 {
     // RFC 3986 Section 3.1
     //
@@ -324,27 +465,51 @@ inline bool uri_view::is_scheme(value_type value) const
 
     switch (value)
     {
-    case 0x2B: // +
-    case 0x2D: // -
-    case 0x2E: // .
-    case 0x30: case 0x31: case 0x32: case 0x33: // DIGIT
-    case 0x34: case 0x35: case 0x36: case 0x37:
-    case 0x38: case 0x39:
-    case 0x41: case 0x42: case 0x43: // A-Z
-    case 0x44: case 0x45: case 0x46: case 0x47:
-    case 0x48: case 0x49: case 0x4A: case 0x4B:
-    case 0x4C: case 0x4D: case 0x4E: case 0x4F:
-    case 0x50: case 0x51: case 0x52: case 0x53:
-    case 0x54: case 0x55: case 0x56: case 0x57:
-    case 0x58: case 0x59: case 0x5A:
-    case 0x61: case 0x62: case 0x63: // a-z
-    case 0x64: case 0x65: case 0x66: case 0x67:
-    case 0x68: case 0x69: case 0x6A: case 0x6B:
-    case 0x6C: case 0x6D: case 0x6E: case 0x6F:
-    case 0x70: case 0x71: case 0x72: case 0x73:
-    case 0x74: case 0x75: case 0x76: case 0x77:
-    case 0x78: case 0x79: case 0x7A:
+    case token_plus:
+    case token_minus:
+    case token_dot:
         return true;
+
+    default:
+        return (is_alpha_token(value) || is_digit_token(value));
+    }
+}
+
+inline bool uri_view::is_unreserved_token(value_type value) const
+{
+    // unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+
+    switch (value)
+    {
+    case token_minus:
+    case token_dot:
+    case token_underscore:
+    case token_tilde:
+        return true;
+
+    default:
+        return (is_alpha_token(value) || is_digit_token(value));
+    }
+}
+
+inline bool uri_view::is_subdelims_token(value_type value) const
+{
+    // sub-delims = "!" / "$" / "&" / "'" / "(" / ")" / "*" / "+" / "," / ";" / "="
+
+    switch (value)
+    {
+    case token_exclamation:
+    case token_dollar:
+    case token_at:
+    case token_apostrophe:
+    case token_parens_open:
+    case token_parens_close:
+    case token_asterisk:
+    case token_comma:
+    case token_semicolon:
+    case token_equal:
+        return true;
+
     default:
         return false;
     }
