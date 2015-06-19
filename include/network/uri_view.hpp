@@ -41,8 +41,16 @@ private:
     size_type parse_host(string_view);
     size_type parse_ipliteral(string_view);
     size_type parse_ipv4address(string_view);
+    size_type parse_ipv6address(const string_view&);
+    size_type parse_ipv6address_1(const string_view&);
+    size_type parse_ipv6address_2(const string_view&);
+    size_type parse_ipv6address_3(const string_view&, size_type before, size_type after);
+    size_type parse_ipv6address_4(const string_view&);
+    size_type parse_ipv6address_5(const string_view&);
     size_type parse_regname(string_view);
     size_type parse_dec_octet(string_view);
+    size_type parse_ipv6address_h16(string_view);
+    size_type parse_ipv6address_ls32(string_view);
     size_type parse_port(string_view);
     size_type parse_path_abempty(string_view);
     size_type parse_segment(string_view);
@@ -51,6 +59,7 @@ private:
 
     bool is_alpha_token(value_type) const;
     bool is_digit_token(value_type) const;
+    bool is_hexdig_token(value_type) const;
     bool is_scheme_token(value_type) const;
     bool is_unreserved_token(value_type) const;
     bool is_subdelims_token(value_type) const;
@@ -74,6 +83,7 @@ private:
     static const value_type token_equal = '=';
     static const value_type token_at = '@';
     static const value_type token_bracket_open = '[';
+    static const value_type token_bracket_close = ']';
     static const value_type token_underscore = '_';
     static const value_type token_tilde = '~';
 

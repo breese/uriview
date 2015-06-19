@@ -71,7 +71,7 @@ inline void uri_view::parse(string_view input)
     size_type processed = parse_scheme(input);
     input.remove_prefix(processed);
 
-    if (input.empty() || (input[0] != token_colon))
+    if (input.empty() || (input.front() != token_colon))
         return; // FIXME: Report error
     input.remove_prefix(sizeof(token_colon));
 
@@ -115,26 +115,29 @@ inline uri_view::size_type uri_view::parse_hier_part(string_view input)
     //           / path-rootless
     //           / path-empty
 
-    if ((input[0] == token_slash) && (input[1] == token_slash))
+    if (input[0] == token_slash)
     {
-        input.remove_prefix(2);
-        size_type total = 0;
-        size_type processed = parse_authority(input);
-        if (processed == 0)
-            return total;
-        authority_view = input.substr(total, processed);
-        total += processed;
+        if (input[1] == token_slash)
+        {
+            input.remove_prefix(2);
+            size_type total = 0;
+            size_type processed = parse_authority(input);
+            if (processed == 0)
+                return total;
+            authority_view = input.substr(total, processed);
+            total += processed;
 
-        processed = parse_path_abempty(input.substr(processed));
-        if (processed == 0)
+            processed = parse_path_abempty(input.substr(processed));
+            if (processed == 0)
+                return total;
+            path_view = input.substr(total, processed);
+            total += processed;
             return total;
-        path_view = input.substr(total, processed);
-        total += processed;
-        return total;
-    }
-    else
-    {
-        assert(false); // Not implemented yet
+        }
+        else
+        {
+            assert(false); // Not implemented yet
+        }
     }
     return 0;
 }
@@ -189,6 +192,7 @@ inline uri_view::size_type uri_view::parse_host(string_view input)
         processed = parse_ipliteral(input);
         if (processed == 0)
             return 0;
+        host_view = input.substr(1, processed - 1);
     }
     else
     {
@@ -199,9 +203,9 @@ inline uri_view::size_type uri_view::parse_host(string_view input)
             if (processed == 0)
                 return 0;
         }
+        host_view = input.substr(0, processed);
     }
 
-    host_view = input.substr(0, processed);
     return processed;
 }
 
@@ -211,7 +215,22 @@ inline uri_view::size_type uri_view::parse_ipliteral(string_view input)
     //
     // IP-literal = "[" ( IPv6address / IPvFuture  ) "]"
 
-    return 0; // FIXME
+    string_view::const_iterator current = input.begin();
+    if (*current != token_bracket_open)
+        return 0;
+
+    std::advance(current, 1);
+    size_type processed = parse_ipv6address(&*current);
+    if (processed == 0)
+    {
+        // FIXME: IPvFuture
+        return 0;
+    }
+    std::advance(current, processed);
+    if (*current != token_bracket_close)
+        return 0;
+
+    return std::distance(input.begin(), current);
 }
 
 inline uri_view::size_type uri_view::parse_ipv4address(string_view input)
@@ -248,6 +267,285 @@ inline uri_view::size_type uri_view::parse_ipv4address(string_view input)
     total += processed;
 
     return total;
+}
+
+inline uri_view::size_type uri_view::parse_ipv6address(const string_view& input)
+{
+    // RFC 3986 Section 3.2.2
+    //
+    // IPv6address =                            6( h16 ":" ) ls32
+    //             /                       "::" 5( h16 ":" ) ls32
+    //             / [               h16 ] "::" 4( h16 ":" ) ls32
+    //             / [ *1( h16 ":" ) h16 ] "::" 3( h16 ":" ) ls32
+    //             / [ *2( h16 ":" ) h16 ] "::" 2( h16 ":" ) ls32
+    //             / [ *3( h16 ":" ) h16 ] "::"    h16 ":"   ls32
+    //             / [ *4( h16 ":" ) h16 ] "::"              ls32
+    //             / [ *5( h16 ":" ) h16 ] "::"              h16
+    //             / [ *6( h16 ":" ) h16 ] "::"
+
+    size_type processed = parse_ipv6address_1(input);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_2(input);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_3(input, 1, 4);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_3(input, 2, 3);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_3(input, 3, 2);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_3(input, 4, 1);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_3(input, 5, 0);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_4(input);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_5(input);
+    if (processed > 0)
+        return processed;
+
+    return 0;
+}
+
+inline uri_view::size_type uri_view::parse_ipv6address_1(const string_view& input)
+{
+    // See parse_ipv6address
+    //
+    // 6( h16 ":" ) ls32
+
+    string_view::const_iterator current = input.begin();
+
+    size_type processed = 0;
+    for (size_type after = 0; after < 6; ++after)
+    {
+        processed = parse_ipv6address_h16(&*current);
+        if (processed == 0)
+            return 0;
+        current += processed;
+        if (current == input.end() || (*current != token_colon))
+            return 0;
+        ++current;
+        if (current == input.end())
+            return 0;
+    }
+
+    processed = parse_ipv6address_ls32(&*current);
+    if (processed == 0)
+        return 0;
+    current += processed;
+
+    return std::distance(input.begin(), current);
+}
+
+inline uri_view::size_type uri_view::parse_ipv6address_2(const string_view& input)
+{
+    // See parse_ipv6address
+    //
+    // "::" 5( h16 ":" ) ls32
+
+    string_view::const_iterator current = input.begin();
+
+    if ((current == input.end()) || (*current != token_colon))
+        return 0;
+    ++current;
+    if ((current == input.end()) || (*current != token_colon))
+        return 0;
+    ++current;
+
+    size_type processed = 0;
+    for (size_type after = 0; after < 5; ++after)
+    {
+        processed = parse_ipv6address_h16(&*current);
+        if (processed == 0)
+            return 0;
+        current += processed;
+        if (current == input.end() || (*current != token_colon))
+            return 0;
+        ++current;
+        if (current == input.end())
+            return 0;
+    }
+
+    processed = parse_ipv6address_ls32(&*current);
+    if (processed == 0)
+        return 0;
+    current += processed;
+    
+    return std::distance(input.begin(), current);
+}
+
+inline uri_view::size_type uri_view::parse_ipv6address_3(const string_view& input,
+                                                         size_type beforeLimit,
+                                                         size_type afterLimit)
+{
+    // See parse_ipv6address
+    //
+    // [ h16 ] "::" 4( h16 ":" ) ls32
+    // [ *1( h16 ":" ) h16 ] "::" 3( h16 ":" ) ls32
+    // [ *2( h16 ":" ) h16 ] "::" 2( h16 ":" ) ls32
+    // [ *3( h16 ":" ) h16 ] "::"    h16 ":"   ls32
+
+    string_view::const_iterator current = input.begin();
+
+    size_type processed = 0;
+    for (size_type before = 0; before < beforeLimit; ++before)
+    {
+        processed = parse_ipv6address_h16(&*current);
+        current += processed;
+        if ((current == input.end()) || (*current != token_colon))
+            return 0;
+        ++current;
+        if (current == input.end())
+            return 0;
+        if (*current == token_colon)
+            break;
+    }
+    if (*current != token_colon)
+        return 0;
+    ++current;
+
+    for (size_type after = 0; after < afterLimit; ++after)
+    {
+        processed = parse_ipv6address_h16(&*current);
+        if (processed == 0)
+            return 0;
+        current += processed;
+        if (current == input.end() || (*current != token_colon))
+            return 0;
+        ++current;
+        if (current == input.end())
+            return 0;
+    }
+
+    processed = parse_ipv6address_ls32(&*current);
+    if (processed == 0)
+        return 0;
+    current += processed;
+    
+    return std::distance(input.begin(), current);
+}
+
+inline uri_view::size_type uri_view::parse_ipv6address_4(const string_view& input)
+{
+    // See parse_ipv6address
+    //
+    // [ *5( h16 ":" ) h16 ] "::"              h16
+
+    string_view::const_iterator current = input.begin();
+
+    size_type processed = 0;
+    for (size_type before = 0; before < 6; ++before)
+    {
+        processed = parse_ipv6address_h16(&*current);
+        current += processed;
+        if ((current == input.end()) || (*current != token_colon))
+            return 0;
+        ++current;
+        if (current == input.end())
+            return 0;
+        if (*current == token_colon)
+            break;
+    }
+    if (*current != token_colon)
+        return 0;
+    ++current;
+
+    processed = parse_ipv6address_h16(&*current);
+    if (processed == 0)
+        return 0;
+    current += processed;
+    
+    return std::distance(input.begin(), current);
+}
+
+inline uri_view::size_type uri_view::parse_ipv6address_5(const string_view& input)
+{
+    // See parse_ipv6address
+    //
+    // [ *6( h16 ":" ) h16 ] "::"
+
+    string_view::const_iterator current = input.begin();
+
+    size_type processed = 0;
+    for (size_type before = 0; before < 7; ++before)
+    {
+        processed = parse_ipv6address_h16(&*current);
+        current += processed;
+        if ((current == input.end()) || (*current != token_colon))
+            return 0;
+        ++current;
+        if (current == input.end())
+            return 0;
+        if (*current == token_colon)
+            break;
+    }
+    if (*current != token_colon)
+        return 0;
+    ++current;
+
+    return std::distance(input.begin(), current);
+}
+
+inline uri_view::size_type uri_view::parse_ipv6address_h16(string_view input)
+{
+    // RFC 3986 Section 3.2.2
+    //
+    // h16         = 1*4HEXDIG
+    //             ; 16 bits of address represented in hexadecimal
+
+    if (input.size() < 4)
+        return 0;
+
+    if (!is_hexdig_token(input[0]))
+        return 0;
+    if (!is_hexdig_token(input[1]))
+        return 1;
+    if (!is_hexdig_token(input[2]))
+        return 2;
+    if (!is_hexdig_token(input[3]))
+        return 3;
+    return 4;
+}
+
+inline uri_view::size_type uri_view::parse_ipv6address_ls32(string_view input)
+{
+    // RFC 3986 Section 3.2.2
+    //
+    // ls32        = ( h16 ":" h16 ) / IPv4address
+    //             ; least-significant 32 bits of address
+
+    string_view::const_iterator current = input.begin();
+    size_type processed = parse_ipv4address(&*current);
+    if (processed > 0)
+        return processed;
+
+    processed = parse_ipv6address_h16(&*current);
+    if (processed == 0)
+        return 0;
+    std::advance(current, processed);
+    if (*current != token_colon)
+        return 0;
+    std::advance(current, 1);
+    processed = parse_ipv6address_h16(&*current);
+    if (processed == 0)
+        return 0;
+    std::advance(current, processed);
+    return std::distance(input.begin(), current);
 }
 
 inline uri_view::size_type uri_view::parse_regname(string_view input)
@@ -455,6 +753,27 @@ inline bool uri_view::is_digit_token(value_type value) const
     }
 }
 
+inline bool uri_view::is_hexdig_token(value_type value) const
+{
+    // RFC 2234 Section 6.1
+    //
+    // HEXDIG =  DIGIT / "A" / "B" / "C" / "D" / "E" / "F"
+
+    switch (value)
+    {
+    case 0x30: case 0x31: case 0x32: case 0x33:
+    case 0x34: case 0x35: case 0x36: case 0x37:
+    case 0x38: case 0x39:
+    case 0x41: case 0x42: case 0x43: case 0x44: // A-F
+    case 0x45: case 0x46:
+    case 0x61: case 0x62: case 0x63: case 0x64: // a-f
+    case 0x65: case 0x66:
+        return true;
+    default:
+        return false;
+    }
+}
+    
 inline bool uri_view::is_scheme_token(value_type value) const
 {
     // RFC 3986 Section 3.1

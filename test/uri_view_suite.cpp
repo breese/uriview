@@ -119,6 +119,451 @@ BOOST_AUTO_TEST_CASE(fail_ipv4_large)
 }
 
 //-----------------------------------------------------------------------------
+// IPv6 address
+//-----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_1_v6)
+{
+    const char input[] = "scheme://[AAAA:BBBB:CCCC:DDDD:EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "AAAA:BBBB:CCCC:DDDD:EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_1_v4)
+{
+    const char input[] = "scheme://[AAAA:BBBB:CCCC:DDDD:EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "AAAA:BBBB:CCCC:DDDD:EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_2_v6)
+{
+    const char input[] = "scheme://[::BBBB:CCCC:DDDD:EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "::BBBB:CCCC:DDDD:EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_2_v4)
+{
+    const char input[] = "scheme://[::BBBB:CCCC:DDDD:EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "::BBBB:CCCC:DDDD:EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_3a_v6)
+{
+    const char input[] = "scheme://[::CCCC:DDDD:EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "::CCCC:DDDD:EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_3a_v4)
+{
+    const char input[] = "scheme://[::CCCC:DDDD:EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "::CCCC:DDDD:EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_3b_v6)
+{
+    const char input[] = "scheme://[1111::CCCC:DDDD:EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::CCCC:DDDD:EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_3b_v4)
+{
+    const char input[] = "scheme://[1111::CCCC:DDDD:EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::CCCC:DDDD:EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_4a_v6)
+{
+    const char input[] = "scheme://[1111::DDDD:EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::DDDD:EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_4a_v4)
+{
+    const char input[] = "scheme://[1111::DDDD:EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::DDDD:EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_4b_v6)
+{
+    const char input[] = "scheme://[1111:2222::DDDD:EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::DDDD:EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_4b_v4)
+{
+    const char input[] = "scheme://[1111:2222::DDDD:EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::DDDD:EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_5a_v6)
+{
+    const char input[] = "scheme://[1111::EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_5a_v4)
+{
+    const char input[] = "scheme://[1111::EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_5b_v6)
+{
+    const char input[] = "scheme://[1111:2222::EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_5b_v4)
+{
+    const char input[] = "scheme://[1111:2222::EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_5c_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333::EEEE:FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333::EEEE:FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_5c_v4)
+{
+    const char input[] = "scheme://[1111:2222:3333::EEEE:FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333::EEEE:FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_6a_v6)
+{
+    const char input[] = "scheme://[1111::FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_6a_v4)
+{
+    const char input[] = "scheme://[1111::FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_6b_v6)
+{
+    const char input[] = "scheme://[1111:2222::FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_6b_v4)
+{
+    const char input[] = "scheme://[1111:2222::FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_6c_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333::FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333::FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_6c_v4)
+{
+    const char input[] = "scheme://[1111:2222:3333::FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333::FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_6d_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444::FFFF:1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444::FFFF:1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_6d_v4)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444::FFFF:1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444::FFFF:1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7a_v6)
+{
+    const char input[] = "scheme://[1111::1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7a_v4)
+{
+    const char input[] = "scheme://[1111::1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7b_v6)
+{
+    const char input[] = "scheme://[1111:2222::1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7b_v4)
+{
+    const char input[] = "scheme://[1111:2222::1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7c_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333::1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333::1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7c_v4)
+{
+    const char input[] = "scheme://[1111:2222:3333::1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333::1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7d_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444::1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444::1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7d_v4)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444::1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444::1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7e_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444:5555::1234:5678]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444:5555::1234:5678");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_7e_v4)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444:5555::1.2.3.4]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444:5555::1.2.3.4");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_8a_v6)
+{
+    const char input[] = "scheme://[1111::1234]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::1234");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_8b_v6)
+{
+    const char input[] = "scheme://[1111:2222::1234]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::1234");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_8c_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333::1234]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333::1234");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_8d_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444::1234]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444::1234");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_8e_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444:5555::1234]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444:5555::1234");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_8f_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444:5555:6666::1234]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444:5555:6666::1234");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_9a_v6)
+{
+    const char input[] = "scheme://[1111::]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111::");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_9b_v6)
+{
+    const char input[] = "scheme://[1111:2222::]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222::");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_9c_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333::]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333::");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_9d_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444::]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444::");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_9e_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444:5555::]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444:5555::");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_9f_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444:5555:6666::]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444:5555:6666::");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+BOOST_AUTO_TEST_CASE(test_ipv6_line_9g_v6)
+{
+    const char input[] = "scheme://[1111:2222:3333:4444:5555:6666:7777::]";
+    network::uri_view uri(input);
+    BOOST_REQUIRE_EQUAL(uri.scheme(), "scheme");
+    BOOST_REQUIRE_EQUAL(uri.host(), "1111:2222:3333:4444:5555:6666:7777::");
+    BOOST_REQUIRE_EQUAL(uri.port(), "");
+}
+
+//-----------------------------------------------------------------------------
 // Path
 //-----------------------------------------------------------------------------
 
