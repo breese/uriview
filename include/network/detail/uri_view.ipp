@@ -192,7 +192,8 @@ inline uri_view::size_type uri_view::parse_host(string_view input)
         processed = parse_ipliteral(input);
         if (processed == 0)
             return 0;
-        host_view = input.substr(1, processed - 1);
+        // Skip brackets
+        host_view = input.substr(1, processed - 2);
     }
     else
     {
@@ -218,17 +219,18 @@ inline uri_view::size_type uri_view::parse_ipliteral(string_view input)
     string_view::const_iterator current = input.begin();
     if (*current != token_bracket_open)
         return 0;
+    ++current;
 
-    std::advance(current, 1);
     size_type processed = parse_ipv6address(&*current);
     if (processed == 0)
     {
         // FIXME: IPvFuture
         return 0;
     }
-    std::advance(current, processed);
+    current += processed;
     if (*current != token_bracket_close)
         return 0;
+    ++current;
 
     return std::distance(input.begin(), current);
 }
