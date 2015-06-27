@@ -55,6 +55,11 @@ inline const uri_view::string_view& uri_view::path() const
     return path_view;
 }
 
+inline const uri_view::string_view& uri_view::query() const
+{
+    return query_view;
+}
+
 //-----------------------------------------------------------------------------
 // Parser
 //-----------------------------------------------------------------------------
@@ -76,8 +81,25 @@ inline void uri_view::parse(string_view input)
     input.remove_prefix(sizeof(token_colon));
 
     processed = parse_hier_part(input);
+    if (processed == 0)
+        return;
+    input.remove_prefix(processed);
+    if (input.empty())
+        return;
 
-    // FIXME: query and fragment
+    if (input.front() == token_question_mark)
+    {
+        input.remove_prefix(1);
+        processed = parse_query(input);
+        if (processed == 0)
+            return;
+        if (input.empty())
+            return;
+    }
+    if (input.front() == token_number_sign)
+    {
+        // FIXME: fragment
+    }
 }
 
 inline uri_view::size_type uri_view::parse_scheme(string_view input)
@@ -106,7 +128,7 @@ inline uri_view::size_type uri_view::parse_scheme(string_view input)
     return result;
 }
 
-inline uri_view::size_type uri_view::parse_hier_part(string_view input)
+inline uri_view::size_type uri_view::parse_hier_part(const string_view& input)
 {
     // RFC 3986 Section 3
     //
@@ -115,24 +137,25 @@ inline uri_view::size_type uri_view::parse_hier_part(string_view input)
     //           / path-rootless
     //           / path-empty
 
-    if (input[0] == token_slash)
+    string_view::const_iterator current = input.begin();
+    if (*current == token_slash)
     {
-        if (input[1] == token_slash)
+        ++current;
+        if (*current == token_slash)
         {
-            input.remove_prefix(2);
-            size_type total = 0;
-            size_type processed = parse_authority(input);
+            ++current;
+            size_type processed = parse_authority(&*current);
             if (processed == 0)
-                return total;
-            authority_view = input.substr(total, processed);
-            total += processed;
+                return 0;
+            authority_view = string_view(current, processed);
+            current += processed;
 
-            processed = parse_path_abempty(input.substr(processed));
+            processed = parse_path_abempty(&*current);
             if (processed == 0)
-                return total;
-            path_view = input.substr(total, processed);
-            total += processed;
-            return total;
+                return std::distance(input.begin(), current);
+            path_view = string_view(current, processed);
+            current += processed;
+            return std::distance(input.begin(), current);
         }
         else
         {
@@ -675,6 +698,35 @@ inline uri_view::size_type uri_view::parse_segment(string_view input)
         std::advance(current, processed);
     }
     return std::distance(input.begin(), current);
+}
+
+inline uri_view::size_type uri_view::parse_query(const string_view& input)
+{
+    // RFC 3986 Section 3.4
+    //
+    // query = *( pchar / "/" / "?" )
+
+    string_view::const_iterator current = input.begin();
+    while (current != input.end())
+    {
+        size_type processed = parse_pchar(&*current);
+        if (processed == 0)
+        {
+            if ((*current == token_slash) ||
+                (*current == token_question_mark))
+            {
+                processed = 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+        current += processed;
+    }
+    const size_type result = std::distance(input.begin(), current);
+    query_view = input.substr(0, result);
+    return result;
 }
 
 inline uri_view::size_type uri_view::parse_pchar(string_view input)

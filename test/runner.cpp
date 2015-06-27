@@ -1,7 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
-// http://protoc.sourceforge.net/
-//
 // Copyright (C) 2013 Bjorn Reese <breese@users.sourceforge.net>
 //
 // Permission to use, copy, modify, and distribute this software for any
@@ -16,5 +14,5 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE boost_protocol
+#define BOOST_TEST_MODULE network_uri
 #include <boost/test/unit_test.hpp>

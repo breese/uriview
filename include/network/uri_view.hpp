@@ -31,11 +31,12 @@ public:
     const string_view& port() const;
     const string_view& authority() const;
     const string_view& path() const;
+    const string_view& query() const;
 
 private:
     void parse(string_view);
     size_type parse_scheme(string_view);
-    size_type parse_hier_part(string_view);
+    size_type parse_hier_part(const string_view&);
     size_type parse_authority(string_view);
     size_type parse_userinfo(string_view);
     size_type parse_host(string_view);
@@ -54,6 +55,7 @@ private:
     size_type parse_port(string_view);
     size_type parse_path_abempty(string_view);
     size_type parse_segment(string_view);
+    size_type parse_query(const string_view&);
     size_type parse_pchar(string_view);
     size_type parse_pct_encoded(string_view);
 
@@ -66,6 +68,7 @@ private:
 
 private:
     static const value_type token_exclamation = '!';
+    static const value_type token_number_sign = '#';
     static const value_type token_dollar = '$';
     static const value_type token_percent = '%';
     static const value_type token_ampersand = '&';
@@ -81,6 +84,7 @@ private:
     static const value_type token_colon = ':';
     static const value_type token_semicolon = ';';
     static const value_type token_equal = '=';
+    static const value_type token_question_mark = '?';
     static const value_type token_at = '@';
     static const value_type token_bracket_open = '[';
     static const value_type token_bracket_close = ']';
@@ -94,6 +98,7 @@ private:
     string_view port_view;
     string_view authority_view;
     string_view path_view;
+    string_view query_view;
 };
 
 } // namespace network
