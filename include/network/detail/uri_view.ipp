@@ -102,7 +102,7 @@ inline void uri_view::parse(string_view input)
     }
 }
 
-inline uri_view::size_type uri_view::parse_scheme(string_view input)
+inline uri_view::size_type uri_view::parse_scheme(const string_view& input)
 {
     // RFC 3986 Section 3.1
     //
@@ -110,22 +110,21 @@ inline uri_view::size_type uri_view::parse_scheme(string_view input)
 
     assert(!input.empty());
 
-    string_view::const_iterator current = input.begin();
+    size_type current = 0;
 
-    if (!is_alpha_token(*current))
+    if (!is_alpha_token(input[current]))
         return 0;
     ++current;
 
     for (;
-         current != input.end();
+         current < input.size();
          ++current)
     {
-        if (!is_scheme_token(*current))
+        if (!is_scheme_token(input[current]))
             break;
     }
-    const size_type result = std::distance(input.begin(), current);
-    scheme_view = input.substr(0, result);
-    return result;
+    scheme_view = input.substr(0, current);
+    return current;
 }
 
 inline uri_view::size_type uri_view::parse_hier_part(const string_view& input)
@@ -137,25 +136,25 @@ inline uri_view::size_type uri_view::parse_hier_part(const string_view& input)
     //           / path-rootless
     //           / path-empty
 
-    string_view::const_iterator current = input.begin();
-    if (*current == token_slash)
+    size_type current = 0;
+    if (input[current] == token_slash)
     {
         ++current;
-        if (*current == token_slash)
+        if (input[current] == token_slash)
         {
             ++current;
-            size_type processed = parse_authority(&*current);
+            size_type processed = parse_authority(input.substr(current));
             if (processed == 0)
                 return 0;
-            authority_view = string_view(current, processed);
+            authority_view = input.substr(current, processed);
             current += processed;
 
-            processed = parse_path_abempty(&*current);
+            processed = parse_path_abempty(input.substr(current));
             if (processed == 0)
-                return std::distance(input.begin(), current);
-            path_view = string_view(current, processed);
+                return current;
+            path_view = input.substr(current, processed);
             current += processed;
-            return std::distance(input.begin(), current);
+            return current;
         }
         else
         {

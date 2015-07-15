@@ -35,7 +35,7 @@ public:
 
 private:
     void parse(string_view);
-    size_type parse_scheme(string_view);
+    size_type parse_scheme(const string_view&);
     size_type parse_hier_part(const string_view&);
     size_type parse_authority(string_view);
     size_type parse_userinfo(string_view);
