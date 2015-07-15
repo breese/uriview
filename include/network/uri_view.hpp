@@ -32,6 +32,7 @@ public:
     const string_view& authority() const;
     const string_view& path() const;
     const string_view& query() const;
+    const string_view& fragment() const;
 
 private:
     void parse(string_view);
@@ -56,6 +57,7 @@ private:
     size_type parse_path_abempty(string_view);
     size_type parse_segment(string_view);
     size_type parse_query(const string_view&);
+    size_type parse_fragment(const string_view&);
     size_type parse_pchar(string_view);
     size_type parse_pct_encoded(string_view);
 
@@ -99,6 +101,7 @@ private:
     string_view authority_view;
     string_view path_view;
     string_view query_view;
+    string_view fragment_view;
 };
 
 } // namespace network

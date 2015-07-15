@@ -60,6 +60,11 @@ inline const uri_view::string_view& uri_view::query() const
     return query_view;
 }
 
+inline const uri_view::string_view& uri_view::fragment() const
+{
+    return fragment_view;
+}
+
 //-----------------------------------------------------------------------------
 // Parser
 //-----------------------------------------------------------------------------
@@ -98,7 +103,12 @@ inline void uri_view::parse(string_view input)
     }
     if (input.front() == token_number_sign)
     {
-        // FIXME: fragment
+        input.remove_prefix(1);
+        processed = parse_fragment(input);
+        if (processed == 0)
+            return;
+        if (input.empty())
+            return;
     }
 }
 
@@ -725,6 +735,35 @@ inline uri_view::size_type uri_view::parse_query(const string_view& input)
     }
     const size_type result = std::distance(input.begin(), current);
     query_view = input.substr(0, result);
+    return result;
+}
+
+inline uri_view::size_type uri_view::parse_fragment(const string_view& input)
+{
+    // RFC 3986 Section 3.5
+    // 
+    // fragment = *( pchar / "/" / "?" )
+
+    string_view::const_iterator current = input.begin();
+    while (current != input.end())
+    {
+        size_type processed = parse_pchar(&*current);
+        if (processed == 0)
+        {
+            if ((*current == token_slash) ||
+                (*current == token_question_mark))
+            {
+                processed = 1;
+            }
+            else
+            {
+                break;
+            }
+        }
+        current += processed;
+    }
+    const size_type result = std::distance(input.begin(), current);
+    fragment_view = input.substr(0, result);
     return result;
 }
 
