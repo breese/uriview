@@ -38,11 +38,11 @@ struct form_converter
         {
             switch (*it)
             {
-            case '+':
-                result += ' ';
+            case traits<char>::alpha_plus:
+                result += traits<char>::alpha_space;
                 break;
 
-            case '%':
+            case traits<char>::alpha_percent:
                 if (std::distance(it, end) >= 3)
                 {
                     ++it;
@@ -110,7 +110,7 @@ inline bool form_view::next()
     key_view = input_view.substr(0, processed);
     input_view.remove_prefix(processed);
 
-    if (input_view.front() != '=')
+    if (input_view.front() != detail::traits<char>::alpha_equal)
         return false;
     input_view.remove_prefix(1);
 
@@ -157,9 +157,9 @@ form_view::size_type form_view::parse_key(const view_type& view)
          it != end;
          ++it)
     {
-        if (*it == '=')
+        if (*it == detail::traits<char>::alpha_equal)
             break;
-        if (*it == '&')
+        if (*it == detail::traits<char>::alpha_ampersand)
             break;
     }
     return std::distance(begin, it);
