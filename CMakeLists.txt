@@ -46,6 +46,7 @@ include_directories(BEFORE include)
 add_executable(test_uri
   test/runner.cpp
   test/uri_view_suite.cpp
+  test/form_view_suite.cpp
 )
 
 target_link_libraries(test_uri
